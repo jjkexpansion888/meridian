@@ -1,0 +1,139 @@
+{
+  "suite": "Meridian original diagnostic fixtures; not a published benchmark",
+  "cases": 12,
+  "submitted": 12,
+  "unknownPredictionIds": [],
+  "passed": 12,
+  "strictPassRate": 1,
+  "results": [
+    {
+      "id": "terminal-reinvestment",
+      "dimension": "valuation",
+      "missing": false,
+      "answerCorrect": true,
+      "abstentionCorrect": true,
+      "sourceCorrect": true,
+      "unitCorrect": true,
+      "passed": true
+    },
+    {
+      "id": "reverse-hurdle",
+      "dimension": "reverse-valuation",
+      "missing": false,
+      "answerCorrect": true,
+      "abstentionCorrect": true,
+      "sourceCorrect": true,
+      "unitCorrect": true,
+      "passed": true
+    },
+    {
+      "id": "preference-downside",
+      "dimension": "security-rights",
+      "missing": false,
+      "answerCorrect": true,
+      "abstentionCorrect": true,
+      "sourceCorrect": true,
+      "unitCorrect": true,
+      "passed": true
+    },
+    {
+      "id": "conversion-upside",
+      "dimension": "security-rights",
+      "missing": false,
+      "answerCorrect": true,
+      "abstentionCorrect": true,
+      "sourceCorrect": true,
+      "unitCorrect": true,
+      "passed": true
+    },
+    {
+      "id": "underwater-common",
+      "dimension": "permanent-loss",
+      "missing": false,
+      "answerCorrect": true,
+      "abstentionCorrect": true,
+      "sourceCorrect": true,
+      "unitCorrect": true,
+      "passed": true
+    },
+    {
+      "id": "staking-inflation",
+      "dimension": "token-economics",
+      "missing": false,
+      "answerCorrect": true,
+      "abstentionCorrect": true,
+      "sourceCorrect": true,
+      "unitCorrect": true,
+      "passed": true
+    },
+    {
+      "id": "unlock-dilution",
+      "dimension": "token-economics",
+      "missing": false,
+      "answerCorrect": true,
+      "abstentionCorrect": true,
+      "sourceCorrect": true,
+      "unitCorrect": true,
+      "passed": true
+    },
+    {
+      "id": "loss-tax-shield",
+      "dimension": "cash-flow",
+      "missing": false,
+      "answerCorrect": true,
+      "abstentionCorrect": true,
+      "sourceCorrect": true,
+      "unitCorrect": true,
+      "passed": true
+    },
+    {
+      "id": "wrong-discount",
+      "dimension": "valuation-convention",
+      "missing": false,
+      "answerCorrect": true,
+      "abstentionCorrect": true,
+      "sourceCorrect": true,
+      "unitCorrect": true,
+      "passed": true
+    },
+    {
+      "id": "replacement-compensation",
+      "dimension": "earnings-quality",
+      "missing": false,
+      "answerCorrect": true,
+      "abstentionCorrect": true,
+      "sourceCorrect": true,
+      "unitCorrect": true,
+      "passed": true
+    },
+    {
+      "id": "zero-excess-return",
+      "dimension": "terminal-economics",
+      "missing": false,
+      "answerCorrect": true,
+      "abstentionCorrect": true,
+      "sourceCorrect": true,
+      "unitCorrect": true,
+      "passed": true
+    },
+    {
+      "id": "unsupported-rights",
+      "dimension": "token-rights",
+      "missing": false,
+      "answerCorrect": true,
+      "abstentionCorrect": true,
+      "sourceCorrect": true,
+      "unitCorrect": true,
+      "passed": true
+    }
+  ],
+  "limitations": "Small synthetic diagnostic suite. Passing is not evidence of institutional investment skill, live research quality or alpha.",
+  "mode": "candidate",
+  "split": "development",
+  "model": "gpt-6.1-sol",
+  "createdAt": "2026-10-19T22:24:50.291Z",
+  "casesSha256": "882fc2f8bc2c3700504aef50b3a0ea2ab4712d0a64efd18f85c7deb4edfac692",
+  "promptSha256": "3de15420c8b11893a8b1c4b29b3fb57d8f329e2cad9e11064ac5ea50a6b505a2",
+  "apiCreditsUsed": false,
+  "subscriptionUsage": true
+}

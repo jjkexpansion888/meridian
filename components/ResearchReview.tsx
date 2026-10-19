@@ -1,0 +1,17 @@
+import {ShieldCheck,AlertCircle,ArrowUpRight} from 'lucide-react';
+import type {Chapter} from '../lib/types';
+export function ResearchReview({chapter}:{chapter:Chapter}){
+ const record=chapter.research;if(!record)return null;
+ const concerns=[...record.flags.filter(f=>f.severity==='material').map(f=>f.message),...record.review.findings.filter(f=>f.severity==='material').map(f=>f.issue)];
+ return <details open={record.outcome==='needs-review'} className={`research-review ${record.outcome==='needs-review'?'needs-review':''}`}>
+  <summary>{record.outcome==='needs-review'?<AlertCircle size={15}/>:<ShieldCheck size={15}/>}Research checks · {record.outcome==='needs-review'?`${concerns.length||1} review issue${concerns.length===1?'':'s'} to resolve`:'AI review completed'}<span>{record.dossier.sources.length} sources · {record.calculations.length+(record.financialCalculations?.length||0)} calculations</span></summary>
+  <p>Evidence and source checks were produced by AI. Arithmetic is recomputed in code; the truth of the inputs still needs human review. This is not an independent audit. {record.revisionCount} revision round{record.revisionCount===1?'':'s'} completed.</p>
+  {concerns.length>0&&<ul>{concerns.map((issue,i)=><li key={i}>{issue}</li>)}</ul>}
+  <h4>What changes the decision</h4><p>{record.review.decisionSensitivity}</p>
+  <h4>Opposing interpretation</h4><p>{record.review.opposingCase}</p>
+  {record.dossier.gaps.length>0&&<><h4>Evidence still missing</h4><ul>{record.dossier.gaps.map((gap,i)=><li key={i}>{gap}</li>)}</ul></>}
+  {record.calculations.length>0&&<div className="review-table"><table><thead><tr><th>Calculation</th><th>Recomputed result</th><th>Check</th></tr></thead><tbody>{record.calculations.map(c=><tr key={c.id}><td>{c.label}</td><td>{c.value===null?'Unavailable':`${c.value.toLocaleString(undefined,{maximumFractionDigits:4})} ${c.unit}`}</td><td>{c.explanation}</td></tr>)}</tbody></table></div>}
+  {record.financialCalculations?.map(result=><div className="financial-check" key={result.id}><h4>{result.label} · {result.status==='blocked'?'Unsupported assumptions':'Scenario calculation'}</h4><p>Figures use the model’s declared units; per-share outputs use base currency. These are calculations on assumptions, not price forecasts.</p><div className="review-table"><table><tbody>{Object.entries(result.values).map(([name,value])=><tr key={name}><th>{name.replace(/([A-Z])/g,' $1')}</th><td>{value.toLocaleString(undefined,{maximumFractionDigits:6})}</td></tr>)}</tbody></table></div><details className="model-input-details"><summary>Inspect model inputs and units</summary><pre>{JSON.stringify(record.dossier.financialModels?.find(m=>m.id===result.id),null,2)}</pre></details><ul>{[...result.issues,...result.notes,...(record.dossier.financialModels?.find(m=>m.id===result.id)?.assumptions||[])].map((note,i)=><li key={i}>{note}</li>)}</ul></div>)}
+  <h4>Source access and provenance</h4><ul>{record.dossier.sources.map(s=><li key={s.id}><a href={s.url} target="_blank" rel="noopener noreferrer">{s.title} <ArrowUpRight size={12}/></a> · {s.author} · {s.publishedAt||'Date unverified'} · {s.access}{s.limitation?` — ${s.limitation}`:''}</li>)}</ul>
+ </details>;
+}

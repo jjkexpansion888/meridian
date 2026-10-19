@@ -1,16 +1,29 @@
 import { env } from "cloudflare:workers";
 import { advance,body,guard,handleError,HttpError,json,provider,readReport,saveReport } from "../../../../lib/server";
 import {importMarkdown} from "../../../../lib/portable-research";
+import {validateResearchRecord} from "../../../../lib/research-record";
+import {researchPlanSchema,planChapters} from "../../../../lib/research-plan";
 type Context={params:Promise<{id:string}>};
 export async function GET(request:Request,ctx:Context){try{const owner=await guard(request);return json((await readReport((await ctx.params).id,owner)).report);}catch(e){return handleError(e);}}
 export async function POST(request:Request,ctx:Context){try{
   const owner=await guard(request);const {id}=await ctx.params;const input=await body(request,800000);
   if(input.action==="advance")return json(await advance(id,owner));
   const {report,revision}=await readReport(id,owner);
+  if(input.action==="plan"){
+    if(report.chapters.some(c=>c.body||c.status==="running"))throw new HttpError(409,"A research plan cannot replace existing work.");
+    const parsed=researchPlanSchema.safeParse(input.plan);if(!parsed.success)throw new HttpError(400,"The research plan lacks required coverage or contains invalid sections.");
+    report.researchPlan=parsed.data;report.chapters=planChapters(parsed.data);await saveReport(report,owner,revision);return json(report);
+  }
   if(input.action==="import"){
     if(report.chapters.some(c=>c.status==="running"))throw new HttpError(409,"Cancel any current API research before importing.");
     if(typeof input.text!=="string"||input.text.trim().length<100||input.text.length>700000)throw new HttpError(400,"Import between 100 and 700,000 characters of Markdown report text.");
     const imported=importMarkdown(report,input.text);
+    if(input.research!==undefined){
+      let record;try{record=validateResearchRecord(input.research,report);}catch(e){throw new HttpError(400,(e as Error).message);}
+      const target=imported.chapters.find(c=>c.id===record.chapterId);
+      if(imported.fallback||imported.matched!==1||!target||target.body===report.chapters.find(c=>c.id===record.chapterId)?.body)throw new HttpError(400,"Research review must match the imported chapter.");
+      target.research=record;
+    }
     report.chapters=imported.chapters;report.researchMode="manual";report.model="Imported research";report.status=report.chapters.every(c=>c.status==="completed")?"completed":"draft";
     await saveReport(report,owner,revision);return json({...report,importResult:{matched:imported.matched,fallback:imported.fallback}});
   }

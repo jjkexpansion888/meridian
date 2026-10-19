@@ -2,6 +2,9 @@ import type {Report,Chapter} from './types';
 import {wordCount} from './types';
 import {researchPacket,importMarkdown} from './portable-research';
 import type {ChatMessage} from './chat-client';
+import {researchChapter,type ResearchStage,type ResearchGenerate} from './institutional-research';
+import type {ResearchRecord} from './research-record';
+import {planningPrompt,parseResearchPlan,planChapters,type ResearchPlan} from './research-plan';
 
 export const chapterSaved=(chapter:Chapter)=>chapter.status==='completed'&&!!chapter.body.trim();
 export function researchContext(report:Report){
@@ -18,17 +21,24 @@ export function validatedChapter(report:Report,chapter:Chapter,message:ChatMessa
  if(parsed.fallback||parsed.matched!==1||!target||target.body===chapter.body||wordCount(target.body)<150)throw new Error(`The answer did not contain a complete “${chapter.title}” chapter. Review the chat answer before resuming.`);
  return {text:`## ${chapter.title}\n\n${target.body}`,chapters:parsed.chapters};
 }
-export type ReportProgress={saved:number;total:number;title:string;phase:'researching'|'saving'|'paused'|'complete'};
-export async function runFullReport(options:{report:Report;signal:AbortSignal;shouldPause:()=>boolean;generate:(prompt:string,context:string)=>Promise<ChatMessage>;save:(markdown:string,chapter:Chapter)=>Promise<void>;recover?:(chapter:Chapter,report:Report)=>ChatMessage|undefined;onProgress:(progress:ReportProgress)=>void}){
+export type ReportProgress={saved:number;total:number;title:string;phase:'researching'|'saving'|'paused'|'complete';stage?:ResearchStage|'planning'};
+export async function runFullReport(options:{report:Report;signal:AbortSignal;shouldPause:()=>boolean;generate:ResearchGenerate;save:(markdown:string,chapter:Chapter,research?:ResearchRecord)=>Promise<void>;recover?:(chapter:Chapter,report:Report)=>ChatMessage|undefined;onProgress:(progress:ReportProgress)=>void;research?:{model:string};savePlan?:(plan:ResearchPlan)=>Promise<void>}){
  let report=structuredClone(options.report);
+ if(options.research&&options.savePlan&&!report.researchPlan&&!report.chapters.some(c=>c.body)){
+  options.signal.throwIfAborted();options.onProgress({saved:0,total:0,title:'Designing the investigation',phase:'researching',stage:'planning'});
+  const message=await options.generate(planningPrompt(report),researchPacket(report),'evidence');options.signal.throwIfAborted();
+  if(message.status!=='completed')throw new Error('Research planning was interrupted.');
+  const plan=parseResearchPlan(message.text);await options.savePlan(plan);report={...report,researchPlan:plan,chapters:planChapters(plan)};
+ }
  const progress=(title:string,phase:ReportProgress['phase'])=>options.onProgress({saved:report.chapters.filter(chapterSaved).length,total:report.chapters.length,title,phase});
  for(const chapter of report.chapters.filter(c=>!chapterSaved(c))){
   options.signal.throwIfAborted();if(options.shouldPause()){progress('', 'paused');return report;}
   progress(chapter.title,'researching');
-  const message=options.recover?.(chapter,report)||await options.generate(fullChapterPrompt(report,chapter),researchContext(report).text);
+  const reviewed=options.research?await researchChapter({report,chapter,model:options.research.model,signal:options.signal,generate:options.generate,onStage:stage=>options.onProgress({saved:report.chapters.filter(chapterSaved).length,total:report.chapters.length,title:chapter.title,phase:'researching',stage})}):undefined;
+  const message=reviewed?.message||options.recover?.(chapter,report)||await options.generate(fullChapterPrompt(report,chapter),researchContext(report).text);
   options.signal.throwIfAborted();const parsed=validatedChapter(report,chapter,message);
-  progress(chapter.title,'saving');await options.save(parsed.text,chapter);
-  report={...report,chapters:parsed.chapters};
+  progress(chapter.title,'saving');await options.save(parsed.text,chapter,reviewed?.research);
+  report={...report,chapters:parsed.chapters.map(c=>c.id===chapter.id&&reviewed?{...c,research:reviewed.research}:c)};
  }
  report.status='completed';progress('','complete');return report;
 }

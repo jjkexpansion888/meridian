@@ -1,0 +1,68 @@
+import {z} from 'zod';
+import type {AssetType} from './types';
+const number=z.number().finite(),nonnegative=number.min(0),fraction=number.min(0).max(1);
+const scale=z.union([z.literal(1),z.literal(1000),z.literal(1000000),z.literal(1000000000)]);
+const common={id:z.string().regex(/^[a-zA-Z0-9_-]{1,60}$/),label:z.string().min(1).max(300),entity:z.string().min(1).max(200),currency:z.string().min(1).max(12),sourceIds:z.array(z.string().max(60)).max(8),assumptions:z.array(z.string().min(1).max(1000)).min(1).max(12)};
+const fcff=z.object({...common,kind:z.literal('fcff-valuation'),moneyScale:scale,shareScale:scale,discountBasis:z.enum(['nominal-after-tax-wacc','other']),years:z.array(z.object({year:z.number().int(),revenue:nonnegative,ebitMargin:number.min(-1).max(1),taxRate:fraction,depreciation:nonnegative,capex:nonnegative,changeNwc:number})).min(1).max(10),wacc:fraction,terminalGrowth:fraction,terminalRoic:nonnegative,cash:nonnegative,debt:nonnegative,otherClaims:nonnegative,nonOperatingAssets:nonnegative,dilutedShares:number.positive()});
+const token=z.object({...common,kind:z.literal('token-economics'),price:nonnegative,circulatingSupply:number.positive(),totalSupply:number.positive(),nextYearSupply:number.positive(),stakingApr:number.min(-1).max(10),supplyInflation:number.min(-.99).max(10),annualFees:nonnegative,annualHolderDistributions:nonnegative,holderRights:z.enum(['documented','none','unknown'])});
+const waterfall=z.object({...common,kind:z.literal('private-waterfall'),moneyScale:scale,shareScale:scale,structure:z.enum(['single-nonparticipating','other']),exitEquityValue:nonnegative,preferredInvestment:nonnegative,preferenceMultiple:nonnegative,asConvertedOwnership:fraction,commonShares:number.positive()});
+const reverse=z.object({...common,kind:z.literal('reverse-steady-state'),enterpriseValue:number.positive(),wacc:fraction,growth:fraction,roic:nonnegative,ebitMargin:number.positive().max(1),taxRate:fraction});
+export const financialModelsSchema=z.array(z.discriminatedUnion('kind',[fcff,token,waterfall,reverse])).max(6);
+export type FinancialModel=z.infer<typeof financialModelsSchema>[number];
+export type FinancialResult={id:string;label:string;kind:FinancialModel['kind'];status:'computed'|'blocked';values:Record<string,number>;notes:string[];issues:string[]};
+export function computeFinancialModels(models:FinancialModel[],asOf:string):FinancialResult[]{
+ return models.map(model=>{
+  const result:FinancialResult={id:model.id,label:model.label,kind:model.kind,status:'computed',values:{},notes:['Scenario arithmetic only. Inputs, rights, conventions and probability require source and human review.'],issues:[]};
+  const block=(issue:string)=>{result.status='blocked';result.issues.push(issue);return result;};
+  if(model.kind==='fcff-valuation'){
+   if(model.discountBasis!=='nominal-after-tax-wacc')return block('FCFF requires a matching nominal after-tax WACC, currency and inflation convention.');
+   if(model.wacc<=model.terminalGrowth||model.terminalRoic<=model.terminalGrowth)return block('WACC and terminal ROIC must exceed stable growth in this positive-cash-flow perpetuity model.');
+   const year=Number(asOf.slice(0,4));if(model.years.some((row,i)=>row.year!==year+i+1))return block('Use consecutive forecast years beginning after the as-of year; this model assumes year-end cash flows.');
+   let pv=0;
+   model.years.forEach((row,i)=>{const ebit=row.revenue*row.ebitMargin,cashTaxes=Math.max(0,ebit)*row.taxRate,nopat=ebit-cashTaxes,fcff=nopat+row.depreciation-row.capex-row.changeNwc;pv+=fcff/(1+model.wacc)**(i+1);result.values[`year${i+1}Fcff`]=fcff;if(ebit<0)result.notes.push(`Year ${row.year}: no immediate tax benefit assumed on operating losses; model NOLs separately.`);if(row.capex<row.depreciation)result.notes.push(`Year ${row.year}: capex below depreciation needs a maintenance/investment explanation.`);});
+   const last=model.years.at(-1)!,terminalNopat=last.revenue*(1+model.terminalGrowth)*last.ebitMargin*(1-last.taxRate);
+   if(terminalNopat<=0)return block('A positive steady-state operating profit is required; do not capitalize a loss with this perpetuity.');
+   const reinvestment=model.terminalGrowth/model.terminalRoic,terminalFcff=terminalNopat*(1-reinvestment),terminalValue=terminalFcff/(model.wacc-model.terminalGrowth),terminalPv=terminalValue/(1+model.wacc)**model.years.length,enterprise=pv+terminalPv,equity=enterprise+model.cash+model.nonOperatingAssets-model.debt-model.otherClaims;
+   Object.assign(result.values,{terminalReinvestmentRate:reinvestment,terminalFcff,terminalValue,enterprise,equity,perShare:Math.max(0,equity)*model.moneyScale/(model.dilutedShares*model.shareScale)});
+   if(enterprise>0){result.values.terminalShare=terminalPv/enterprise;if(result.values.terminalShare>.75)result.notes.push('More than 75% of enterprise value comes from the terminal period; conviction depends heavily on long-run assumptions.');}
+   if(equity<0)result.notes.push('Residual modeled common equity is negative; displayed per-share value is floored at zero. Distress/options and recovery require separate analysis.');
+   result.notes.push('Money and share counts use the declared moneyScale and shareScale; per-share output is in base currency units. Year-end discounting; no midyear convention. Stock compensation must be represented in operating costs or economically consistent dilution, without double counting.');
+  }else if(model.kind==='token-economics'){
+   if(model.circulatingSupply>model.totalSupply||model.nextYearSupply>model.totalSupply)return block('Circulating/forecast supply exceeds the stated total supply; reconcile definitions.');
+   if(model.holderRights!=='documented'&&model.annualHolderDistributions>0)return block('Do not value holder distributions without documented economic rights.');
+   Object.assign(result.values,{marketCap:model.price*model.circulatingSupply,fullyDilutedValue:model.price*model.totalSupply,currentHolderShareRetention:model.circulatingSupply/model.nextYearSupply,inflationAdjustedStakingYield:(1+model.stakingApr)/(1+model.supplyInflation)-1});
+   if(model.annualFees>0)result.values.feeCaptureRate=model.annualHolderDistributions/model.annualFees;
+   if(model.annualHolderDistributions>model.annualFees)result.notes.push('Holder distributions exceed fees; identify treasury subsidies or other funding before treating payouts as sustainable.');
+   result.notes.push('Staking yield adjusts token quantity for inflation; it is not a USD real return. Circulating unlock dilution differs from total-supply inflation. Fees, TVL, transaction notional, protocol revenue and holder distributions are distinct.');
+   if(model.holderRights!=='documented')result.notes.push('Tokenholder cash-flow valuation is unsupported; network/company earnings do not establish tokenholder rights.');
+  }else if(model.kind==='private-waterfall'){
+   if(model.structure!=='single-nonparticipating')return block('This calculator only supports one nonparticipating preferred class. Participation, caps, multiple seniorities and option pools require a full waterfall.');
+   const preference=Math.min(model.exitEquityValue,model.preferredInvestment*model.preferenceMultiple),conversion=model.exitEquityValue*model.asConvertedOwnership,preferredPayout=Math.max(preference,conversion),commonPayout=Math.max(0,model.exitEquityValue-preferredPayout);
+   Object.assign(result.values,{preferencePayout:preference,conversionPayout:conversion,preferredPayout,commonPayout,commonPerShare:commonPayout*model.moneyScale/(model.commonShares*model.shareScale)});
+   result.notes.push('Exit equity proceeds must already be net of debt and transaction claims. Common share count excludes preferred as-converted shares. No debt is subtracted twice; preferred receives preference OR conversion, not both.');
+  }else{
+   if(model.wacc<=model.growth||model.roic<=model.growth||model.taxRate>=1)return block('Stable growth requires WACC and ROIC above growth, and a positive after-tax operating margin.');
+   const reinvestment=model.growth/model.roic,requiredNextYearFcff=model.enterpriseValue*(model.wacc-model.growth),requiredNextYearNopat=requiredNextYearFcff/(1-reinvestment),requiredNextYearRevenue=requiredNextYearNopat/(model.ebitMargin*(1-model.taxRate));
+   Object.assign(result.values,{reinvestmentRate:reinvestment,requiredNextYearFcff,requiredNextYearNopat,requiredNextYearRevenue});
+   result.notes.push('A steady-state reverse-valuation hurdle, not a forecast or multistage reverse DCF. Do not attach a probability without evidence.');
+  }
+  if(Object.values(result.values).some(v=>!Number.isFinite(v)))return {...result,status:'blocked',values:{},issues:['Non-finite arithmetic; reconcile the assumptions.']};
+  return result;
+ });
+}
+
+export function financialReasoningMandate(type:AssetType){return `FINANCIAL REASONING PROTOCOL
+1. Define the exact economic exposure and decision before calculating. Track units, currency, reporting period, consolidated entity, cash-flow rights and what is actually observable. Unknown is not zero.
+2. Reconcile income, cash flow and balance-sheet changes. Separate cash earnings from working-capital timing, capitalized costs, recurring stock compensation, acquisitions, leases, noncash marks and repeated adjustments. Distinguish EBITDA, operating cash flow, FCFF and FCFE; never mix their multiples or discount rates. Check gross versus net debt and diluted versus basic shares.
+3. Forecast causal operating drivers (volume × price, cohorts/retention, capacity, margins and reinvestment), using relevant base rates and constraints. Growth must have an investment mechanism. Terminal growth must reconcile to reinvestment and return on capital; preserve cyclicality and mean reversion. Do not invent base-rate distributions or probability weights.
+4. Build internally consistent downside/base/upside scenarios and reverse-valuation hurdles when evidence supports them. Link adverse qualitative evidence to specific drivers, funding requirements, security rights or scenario bounds. Separate uncertainty about facts from dispersion in outcomes. Show sensitivities rather than a precise price target unsupported by the inputs.
+5. Test alternative explanations, duplicate/correlated sources and the weakest material link in the thesis. Identify which original document or observation would falsify the conclusion. Absent evidence should reduce conviction or prevent valuation, not be filled with a plausible number.
+${type==='crypto'?'CRYPTO: distinguish network usage, gross fees, validator economics, treasury subsidies and legally/technically enforceable tokenholder distributions. Model issuance, burns, unlocks, concentration and dilution separately. Staking APR is not a USD return. Compare FDV with circulating value; never treat TVL or transaction notional as revenue.':type==='private'?'PRIVATE: separate preferred financing headlines from common-share economics. Trace liquidation preferences, participation, seniority, conversion, option-pool refreshes, dilution and exit proceeds after debt. Test runway and the next funding round; revenue claims without statements or reconciliations remain claims.':'EQUITY: reconcile enterprise-to-equity value, cash restrictions, debt/leases, minority and preferred claims, pensions and dilution. Stock compensation has an economic cost; avoid both ignoring it and deducting it twice. For banks/insurers use capital- and equity-based frameworks rather than forcing a generic industrial FCFF model.'}
+Use deterministic model outputs as arithmetic on explicit assumptions, never as verified forecasts. When the available model cannot represent the actual economics, mark it unsupported instead of simplifying away material rights.`;}
+
+export const financialModelInstructions=`Optionally add financialModels (at most 6) to the ledger when inputs justify a calculation. Otherwise use [] and explain missing inputs. Each model needs id, label, entity, currency, sourceIds and assumptions (nonempty array, including definitions, source facts versus forecasts, units and limitations). All rates are DECIMALS, never percent points. Do not invent financial inputs to fill this schema.
+Supported models:
+- kind: "fcff-valuation", discountBasis: "nominal-after-tax-wacc" or "other", years: [{year: next calendar year, revenue, ebitMargin, taxRate, depreciation, capex, changeNwc}], wacc, terminalGrowth, terminalRoic, cash, debt, otherClaims, nonOperatingAssets, dilutedShares. Include moneyScale and shareScale, each 1, 1000, 1000000 or 1000000000; these normalize per-share results. Consecutive annual forecasts, max 10. Tax rates 0..1. Terminal model deducts growth/ROIC reinvestment from NOPAT. It does not extrapolate last-year FCFF without funding growth. Banks/insurers are not supported by this generic FCFF model.
+- kind: "token-economics", price, circulatingSupply, totalSupply, nextYearSupply, stakingApr, supplyInflation, annualFees, annualHolderDistributions, holderRights: "documented"|"none"|"unknown". Supply counts in actual tokens, price/cash in stated currency base units. Supply inflation is change in total supply, not circulating unlocks. Rights must be sourced.
+- kind: "private-waterfall", structure: "single-nonparticipating"|"other", exitEquityValue, preferredInvestment, preferenceMultiple, asConvertedOwnership, commonShares. One preferred class only; exit proceeds after debt, commonShares exclude preferred. Include moneyScale and shareScale, each 1, 1000, 1000000 or 1000000000.
+- kind: "reverse-steady-state", enterpriseValue, wacc, growth, roic, ebitMargin, taxRate. A steady-state next-year revenue hurdle only, not a probability or full forecast.`;

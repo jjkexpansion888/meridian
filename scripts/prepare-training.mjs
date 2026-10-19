@@ -1,0 +1,12 @@
+import {readFile,mkdir,writeFile} from 'node:fs/promises';
+import path from 'node:path';
+import {prepareTraining} from '../lib/training-workflow.mjs';
+const args=Object.fromEntries(process.argv.slice(2).reduce((pairs,value,index,all)=>{if(index%2===0)pairs.push([value,all[index+1]]);return pairs;},[]));
+if(!args['--input']||!args['--output']||!args['--validation-after']||!args['--test-after'])throw new Error('Usage: node scripts/prepare-training.mjs --input approved.jsonl --output .meridian-local/training/run --validation-after YYYY-MM-DD --test-after YYYY-MM-DD');
+const raw=await readFile(args['--input'],'utf8');if(raw.length>50000000)throw new Error('Dataset exceeds 50 MB.');
+const rows=raw.split(/\r?\n/).filter(line=>line.trim()).map((line,index)=>{try{return JSON.parse(line);}catch{throw new Error(`Invalid JSON at line ${index+1}.`);}});
+const {jsonl,manifest}=prepareTraining(rows,{validationAfter:args['--validation-after'],testAfter:args['--test-after']});
+const output=path.resolve(args['--output']);await mkdir(output,{recursive:true});
+for(const [name,text] of Object.entries(jsonl))await writeFile(path.join(output,`${name}.jsonl`),text,{flag:'wx'});
+await writeFile(path.join(output,'manifest.json'),JSON.stringify(manifest,null,2),{flag:'wx'});
+console.log(JSON.stringify({output,counts:manifest.counts,rejected:manifest.rejected.length,excluded:manifest.excluded.length,readyForTrainingReview:manifest.readyForTrainingReview,weightsTrained:false,uploadsPerformed:false},null,2));

@@ -1,0 +1,12 @@
+{"id":"terminal-reinvestment","answer":20.7125,"unit":"USD/share","abstain":false,"usedSourceIds":["s1"]}
+{"id":"reverse-hurdle","answer":888.888888888889,"unit":"USD millions","abstain":false,"usedSourceIds":["s1"]}
+{"id":"preference-downside","answer":1,"unit":"USD/share","abstain":false,"usedSourceIds":["s1"]}
+{"id":"conversion-upside","answer":4,"unit":"USD/share","abstain":false,"usedSourceIds":["s1"]}
+{"id":"underwater-common","answer":0,"unit":"USD/share","abstain":false,"usedSourceIds":["s1"]}
+{"id":"staking-inflation","answer":-0.0608695652173913,"unit":"decimal","abstain":false,"usedSourceIds":["s1"]}
+{"id":"unlock-dilution","answer":0.6666666666666667,"unit":"ratio","abstain":false,"usedSourceIds":["s1"]}
+{"id":"loss-tax-shield","answer":-30,"unit":"USD millions","abstain":false,"usedSourceIds":["s1"]}
+{"id":"wrong-discount","answer":null,"unit":"USD","abstain":true,"usedSourceIds":["s1"]}
+{"id":"replacement-compensation","answer":60,"unit":"USD millions","abstain":false,"usedSourceIds":["s1"]}
+{"id":"zero-excess-return","answer":1000,"unit":"USD millions","abstain":false,"usedSourceIds":["s1"]}
+{"id":"unsupported-rights","answer":"no","unit":"categorical","abstain":false,"usedSourceIds":["s1"]}

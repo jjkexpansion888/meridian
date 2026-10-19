@@ -13,7 +13,9 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
     "test": "node scripts/test.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "training:prepare": "node scripts/prepare-training.mjs",
+    "research:evaluate": "node scripts/evaluate-research.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

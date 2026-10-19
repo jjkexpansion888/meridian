@@ -1,0 +1,13 @@
+{
+  "id": "replace-with-unique-id",
+  "entityGroup": "canonical-issuer-or-network-group",
+  "assetType": "equity",
+  "asOf": "2025-12-31",
+  "purpose": "training",
+  "benchmarkIds": [],
+  "rights": {"trainingAllowed": false, "basis": "original", "evidence": "Replace with ownership or a documented training license; public access alone is insufficient.", "attribution": ""},
+  "review": {"approved": false, "independent": false, "reviewer": "", "reviewedAt": "2026-10-19", "checks": []},
+  "sources": [{"documentGroup": "canonical-document-id", "availableAt": "2025-12-01", "url": "https://example.com/original-record"}],
+  "prompt": "Replace with the dated investment question and the evidence available to the model at that time.",
+  "answer": "Replace with an original, independently reviewed diligence answer that preserves accounting conventions, evidence caveats, the strongest opposing case and decision-relevant uncertainty. This template is intentionally unapproved."
+}

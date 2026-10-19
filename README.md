@@ -8,11 +8,15 @@ An evidence-led investment diligence workspace for public equities, cryptocurren
 
 ### Research chat inside Meridian
 
-Choose **New diligence**, enter a company name, ticker, cryptocurrency or website, and click **Start full diligence**. Meridian researches the identity, selects the public-equity, crypto or private-company template, and generates every chapter automatically. It asks you to choose an exact investment only when the name is genuinely ambiguous. Connect an eligible ChatGPT plan when prompted.
+Choose **New diligence**, enter a company name, ticker, cryptocurrency or website, and click **Start full diligence**. Meridian researches the identity, identifies its economic exposure, designs an investment-specific investigation, and generates the complete report automatically. It asks you to choose an exact investment only when the name is genuinely ambiguous. Connect an eligible ChatGPT plan when prompted.
 
-For an existing report, choose **Research chat → Generate full report** (or **Continue full report**). Chapters research in sequence to preserve depth, save automatically, and culminate in a memo based on the preceding investigation. Existing completed chapters are preserved. **Pause after this chapter** finishes and saves the current chapter; **Stop response** interrupts immediately without importing partial text. Keep this report open; switching its reader tabs is supported, but closing the page or leaving the report stops the queue. Return and continue from the saved chapters. A finished answer can be recovered from local chat history if its report save failed. No automatic paid API fallback is used.
+For an existing report, choose **Research chat → Generate full report** (or **Continue research**). Meridian gathers a structured source ledger, recalculates supported financial arithmetic, writes the analysis and performs a fresh-context skeptical review. Material findings receive up to three targeted revision rounds with fresh rechecks; unresolved issues remain visible. Existing saved work is preserved.
 
-You can still ask individual questions or request a chapter. Use **Save to report** for these individual answers to review the mapping before replacing report text. Uncheck **Generate every chapter automatically** when creating a brief if you want to research later.
+Wait while the investigation runs: drafts save privately, and **one consolidated report** appears when every section is finished, with the executive synthesis first. Report viewing, export and follow-up chat unlock at completion. **Pause after this chapter** saves the current section before pausing. Keep the report open; closing it or leaving the report stops orchestration. Return and continue from saved progress. An unfinished structured stage may need to run again. No automatic paid API fallback is used.
+
+After completion, ask follow-up questions and use **Save to report** to review an individual answer before replacement. Uncheck **Research and deliver the complete report** when creating a brief if you want to begin later. Remove prior research using the trash button on its library row and confirm the named report. This removes the report and notes from the library; separately stored local chat transcripts are not erased.
+
+The [research method](docs/RESEARCH-METHOD.md) maps recent public financial-research papers to implemented checks and explains the limits. The [offline training workflow](docs/TRAINING.md) prepares rights-reviewed examples and held-out diagnostics. **No weights have been fine-tuned and institutional investment performance has not been demonstrated.**
 
 This uses the official [ChatGPT plan integration for local apps](https://developers.openai.com/siwc/token-sharing-open-source), with subscription limits and account eligibility. It does not use `OPENAI_API_KEY`, buy credits, or fall back to API billing. Manage the app's allowance and any credit permissions in [ChatGPT usage settings](https://chatgpt.com/settings/usage). Web research availability depends on the selected model and account policy. This connection does not access existing ChatGPT conversations.
 
@@ -32,13 +36,13 @@ The copy-and-import workflow makes no OpenAI API calls. It uses your existing ch
 
 ## What it does
 
-- Identifies the investment from its name, ticker or website and generates all 15–16 chapters from one action using your ChatGPT plan, with clickable citations. An optional funded API mode remains available for existing API-mode reports.
+- Identifies the investment from its name, ticker or website and designs 6–16 investment-specific sections plus an executive synthesis from one action using your ChatGPT plan, with clickable citations. An optional funded API mode remains available for existing API-mode reports.
 - Targets 12,000–19,000 words for deep diligence, or 23,000–35,000 words for investment committee depth. Length is a target, not a guarantee.
 - Covers financial statements and earnings quality, business economics, competition, customers, management, valuation, permanent-loss risks, the opposing case, catalysts and evidence gaps.
 - Searches relevant YouTube interviews, demonstrations and technical talks, and public social posts/discussions. Requires author/date/permalink, verified timestamps when available, disclosure of accessible material and incentives, and corroboration of material claims. Inaccessible media becomes an evidence gap, never fabricated viewing or transcripts. YouTube and Social filters are available in the evidence library.
 - Adds token economics and security for crypto; cap tables, financing terms and commercial diligence for private companies.
 - Saves reports, notes and watchlist preferences privately in D1, scoped to the signed-in account.
-- Preserves research progress by chapter; supports pause, resume, retry and cancellation.
+- Preserves research progress privately by section; delivers one complete report and supports pause/resume and removal of prior research.
 - Includes source search, Markdown/source/model export, and a print layout for saving PDF.
 - Provides a transparent five-year DCF sensitivity lab with user-editable assumptions.
 - Includes clearly marked fictional examples. Their figures are synthetic, and they have no fabricated citations.
@@ -56,7 +60,7 @@ npm run dev
 
 Open the localhost URL printed by the dev server. Click New diligence, then Sign in to create research. The portable starter provides loopback-only mock sign-in for local development. It is not included in production.
 
-For local live research, copy `.dev.vars.example` to `.dev.vars`, add your own `OPENAI_API_KEY`, and restart the dev server. Store hosted keys in server secrets. API keys, local databases and saved reports are excluded from Git and the source ZIP. Never place keys in browser code or commit a populated environment file.
+For optional API-key research only, copy `.dev.vars.example` to `.dev.vars`, add your own `OPENAI_API_KEY`, and restart the dev server. Store hosted keys in server secrets. API keys, local databases and saved reports are excluded from Git and the source ZIP. Never place keys in browser code or commit a populated environment file.
 
 For an existing optional API-mode report, review the brief, then click **Start paid research**. Programmatic creation can explicitly select `researchMode: "api"`; the standard creation form uses your ChatGPT plan. API charges apply. Keep the tab open to advance between chapters. Closing it does not cancel a provider request already in progress; return to resume the queue. Pause lets the current request finish, while Cancel current asks the provider to stop it.
 
@@ -69,6 +73,7 @@ npm run build
 # With the local server and database running:
 node tests/local-api.mjs
 node tests/local-full-report.mjs
+node tests/local-research-review.mjs
 ```
 
 Unit tests also cover portable briefs, chapter mapping, import fallbacks, source provenance and quota errors. Local integration tests verify that no-API mode refuses paid calls. Unit tests cover asset-specific mandates, evidence handling, citation offsets, source deduplication, unsafe URLs and DCF arithmetic. Local API checks cover authentication, spoofed-identity rejection, origin enforcement, validation, persistence, notes, watchlist, missing-key failure, pause/resume and fixture deletion. They refuse non-loopback hosts and do not intentionally make paid provider calls.

@@ -1,0 +1,69 @@
+{
+  "suite": "Meridian original diagnostic fixtures; not a published benchmark",
+  "cases": 5,
+  "submitted": 5,
+  "unknownPredictionIds": [],
+  "passed": 5,
+  "strictPassRate": 1,
+  "results": [
+    {
+      "id": "multiyear-losses-units",
+      "dimension": "multistage-valuation",
+      "missing": false,
+      "answerCorrect": true,
+      "abstentionCorrect": true,
+      "sourceCorrect": true,
+      "unitCorrect": true,
+      "passed": true
+    },
+    {
+      "id": "hold-preference-conversion",
+      "dimension": "security-rights",
+      "missing": false,
+      "answerCorrect": true,
+      "abstentionCorrect": true,
+      "sourceCorrect": true,
+      "unitCorrect": true,
+      "passed": true
+    },
+    {
+      "id": "hold-staking-share",
+      "dimension": "token-economics",
+      "missing": false,
+      "answerCorrect": true,
+      "abstentionCorrect": true,
+      "sourceCorrect": true,
+      "unitCorrect": true,
+      "passed": true
+    },
+    {
+      "id": "hold-reverse",
+      "dimension": "reverse-valuation",
+      "missing": false,
+      "answerCorrect": true,
+      "abstentionCorrect": true,
+      "sourceCorrect": true,
+      "unitCorrect": true,
+      "passed": true
+    },
+    {
+      "id": "hold-unsupported-waterfall",
+      "dimension": "missing-rights",
+      "missing": false,
+      "answerCorrect": true,
+      "abstentionCorrect": true,
+      "sourceCorrect": true,
+      "unitCorrect": true,
+      "passed": true
+    }
+  ],
+  "limitations": "Small synthetic diagnostic suite. Passing is not evidence of institutional investment skill, live research quality or alpha.",
+  "mode": "baseline",
+  "split": "holdout",
+  "model": "gpt-6.1-sol",
+  "createdAt": "2026-10-19T22:23:53.926Z",
+  "casesSha256": "b71ede72b3d76da14c6d5f9bb2eaef52d16d3e5496e904494e0ea61c16bbc961",
+  "promptSha256": "4ad524b21d93e8a7f5b09f47b6d84f91afd3c0d37ea4376edb83622eddd80fdf",
+  "apiCreditsUsed": false,
+  "subscriptionUsage": true
+}

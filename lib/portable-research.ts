@@ -25,7 +25,7 @@ export function importMarkdown(report:Report,text:string):{chapters:Chapter[];ma
  if(!blocks.size){const target=report.chapters.find(c=>c.id==="memo")||report.chapters[0];blocks.set(target.id,[text]);}
  else if(preamble.join("\n").trim()){const first=[...blocks.keys()][0];blocks.set(first,[...preamble,"",...blocks.get(first)!]);}
  let matched=0;
- const chapters=report.chapters.map(c=>{const body=blocks.get(c.id)?.join("\n").trim();if(!body)return c;matched++;return {...c,body,status:"completed" as const,wordCount:wordCount(body),sources:importedSources(body),responseId:undefined,error:undefined};});
+ const chapters=report.chapters.map(c=>{const body=blocks.get(c.id)?.join("\n").trim();if(!body)return c;matched++;return {...c,body,status:"completed" as const,wordCount:wordCount(body),sources:importedSources(body),responseId:undefined,error:undefined,research:undefined};});
  return {chapters,matched,fallback:!text.split(/\r?\n/).some(line=>{const heading=line.match(/^#{1,2}\s+(.+?)\s*#*$/);return heading&&titleMap.has(normalize(heading[1]));})};
 }
 export function providerFailure(response:any){

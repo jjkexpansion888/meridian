@@ -1,0 +1,5 @@
+{"id":"multiyear-losses-units","answer":7.486241201278363,"unit":"USD/share","abstain":false,"usedSourceIds":["s1"]}
+{"id":"hold-preference-conversion","answer":3.75,"unit":"USD/share","abstain":false,"usedSourceIds":["s1"]}
+{"id":"hold-staking-share","answer":-0.04504504504504504,"unit":"decimal","abstain":false,"usedSourceIds":["s1"]}
+{"id":"hold-reverse","answer":1046.6746794871794,"unit":"USD millions","abstain":false,"usedSourceIds":["s1"]}
+{"id":"hold-unsupported-waterfall","answer":null,"unit":"USD/share","abstain":true,"usedSourceIds":["s1"]}

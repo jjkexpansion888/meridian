@@ -1,0 +1,14 @@
+import type {Report,Chapter} from './types';
+import {uniqueSources} from './types';
+export const publishedChapters=(report:Report)=>[...report.chapters.filter(c=>c.id==='memo'),...report.chapters.filter(c=>c.id!=='memo')];
+function financialAppendix(chapter:Chapter){return (chapter.research?.financialCalculations||[]).map(r=>{const model=chapter.research?.dossier.financialModels?.find(m=>m.id===r.id);return `\n\n### ${r.label} — ${r.status}\n\nScenario arithmetic, not a price forecast. Model-declared units; per-share values use base currency.\n\n${Object.entries(r.values).map(([key,value])=>`- ${key}: ${value}`).join('\n')}\n\n${[...r.issues,...r.notes,...(model?.assumptions||[])].map(note=>`- ${note}`).join('\n')}\n\nModel inputs for verification:\n\n\`\`\`json\n${JSON.stringify(model,null,2)}\n\`\`\``;}).join('');}
+function reviewAppendix(chapter:Chapter){
+ const record=chapter.research;
+ if(!record)return '\n\n*This section has no structured evidence review record. Citations require independent review.*';
+ return `\n\n### Evidence review and unresolved limitations\n\n${record.outcome==='reviewed'?'AI review completed':'Further review required'} — this is a bounded model review, not an independent audit.\n\n${record.flags.map(f=>`- ${f.severity}: ${f.message}`).join('\n')}\n${record.review.findings.map(f=>`- ${f.severity}: ${f.issue} Correction: ${f.fix}`).join('\n')}\n\nOpposing interpretation: ${record.review.opposingCase}\n\nDecision sensitivity: ${record.review.decisionSensitivity}\n\n${record.dossier.gaps.map(g=>`- Evidence gap: ${g}`).join('\n')}\n\n${record.calculations.map(c=>`- ${c.label}: ${c.value??'unavailable'} ${c.unit} (${c.status}). ${c.explanation}`).join('\n')}\n\n${record.dossier.sources.map(s=>`- [${s.title}](${s.url}) — ${s.author}; published ${s.publishedAt||'date unknown'}; model-reported access: ${s.access}. ${s.limitation}`).join('\n')}`;
+}
+export function reportMarkdown(report:Report){
+ if(!report.demo&&(report.status!=='completed'||report.chapters.some(c=>c.status!=='completed'||!c.body.trim())))throw new Error('The full report is available after research completes.');
+ const sources=uniqueSources(report.chapters);
+ return `# ${report.name} — Diligence report\n\n${report.demo?'ILLUSTRATIVE SAMPLE — FICTIONAL COMPANY\n\n':''}As of: ${report.asOf} | Status: ${report.status}\n\n${publishedChapters(report).map(c=>`# ${c.title}\n\n${c.body||'[Research not completed]'}${report.demo?'':reviewAppendix(c)+financialAppendix(c)}`).join('\n\n---\n\n')}\n\n# Evidence library\n\n${sources.map((s,i)=>`${i+1}. [${s.title}](${s.url}) — ${s.cited?'cited':'consulted'}; provenance requires review`).join('\n')}\n\n# Analyst notes\n\n${report.notes||'No notes.'}\n\nAI-assisted research. Missing evidence is not verification. No claim of institutional-equivalent performance.`;
+}
