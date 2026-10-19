@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./research-chat.css";
 
 export const metadata: Metadata = {
   title: "Meridian — Investment Intelligence",

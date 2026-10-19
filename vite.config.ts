@@ -1,4 +1,5 @@
 import vinext from "vinext";
+import { meridianChat } from "./scripts/chat-plugin.mjs";
 import { defineConfig } from "vite";
 import hostingConfig from "./.openai/hosting.json";
 import { readExecutionProfile } from "./scripts/execution-profile.mjs";
@@ -53,6 +54,7 @@ export default defineConfig(async ({ command }) => {
 
   return {
     server: {
+      fs: { deny: [".env", ".env.*", "*.{crt,pem}", "**/.git/**", "**/.meridian-local/**", "**/.dev.vars*"] },
       ...(managedLinux
         ? { host: "0.0.0.0", allowedHosts: ["terminal.local"] }
         : {}),
@@ -61,6 +63,7 @@ export default defineConfig(async ({ command }) => {
         : {}),
     },
     plugins: [
+      ...(!managedLinux && command === "serve" ? [meridianChat()] : []),
       vinext(),
       sites({ mockAuth: !managedLinux }),
       connectorPreview(),

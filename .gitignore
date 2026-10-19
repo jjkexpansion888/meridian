@@ -57,3 +57,6 @@ next-env.d.ts
 /.codex/
 /outputs/
 /work/
+
+# Local ChatGPT connection and research conversations (never publish).
+/.meridian-local/

@@ -9,5 +9,5 @@ for(const file of ['lib/types.ts','lib/research.ts','lib/portable-research.ts','
   const compiled=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
   await writeFile(output,compiled.replace(/from (["'])(\.\.?\/[^"']+)\1/g,(_,quote,specifier)=>`from ${quote}${specifier}.js${quote}`));
 }
-const result=spawnSync(process.execPath,['--test','.sites-runtime/tests/tests/research.test.js'],{stdio:'inherit'});
+const result=spawnSync(process.execPath,['--test','.sites-runtime/tests/tests/research.test.js','tests/chat.test.mjs','tests/chat-integration.test.mjs'],{stdio:'inherit'});
 process.exitCode=result.status??1;

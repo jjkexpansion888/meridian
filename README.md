@@ -6,13 +6,23 @@ An evidence-led investment diligence workspace for public equities, cryptocurren
 
 ## Default workflow: no API credits
 
+### Research chat inside Meridian
+
+Open a report and choose **Research chat → Continue with ChatGPT**. Sign in to an eligible ChatGPT account and authorize Meridian to use your plan. Select an available model, keep **Web research** on for current evidence, then ask a question or select **Research the next chapter**. Answers stream into the conversation. Use **Save to report** to review the chapter mapping before replacing report text.
+
+This uses the official [ChatGPT plan integration for local apps](https://developers.openai.com/siwc/token-sharing-open-source), with subscription limits and account eligibility. It does not use `OPENAI_API_KEY`, buy credits, or fall back to API billing. Manage the app's allowance and any credit permissions in [ChatGPT usage settings](https://chatgpt.com/settings/usage). Web research availability depends on the selected model and account policy. This connection does not access existing ChatGPT conversations.
+
+The connection runs only in the local development launcher (`npm run dev` / `Start-Meridian.ps1`), not in a remotely hosted build. Conversation history is saved per report and per ChatGPT registration in ignored `.meridian-local/`. Each message sends the brief, a bounded report excerpt and recent chat history to OpenAI. Credentials remain in the local Node process and protected local storage, never browser storage. Windows uses DPAPI encryption; if that is unavailable, credentials stay in memory and the UI says the connection lasts for this session. Other platforms use owner-only credential files. Never share `.meridian-local/`.
+
+### Copy and import from an existing chat
+
 1. Create a research brief for a stock, cryptocurrency or private company.
 2. Keep **Use my Codex / ChatGPT chat** selected.
 3. Copy or download the detailed brief and use it in your existing Codex/ChatGPT chat.
 4. Ask for the long report as a Markdown file, preserving the supplied chapter headings and ordinary source links.
 5. Click **Import report** in Meridian. Review the chapter mapping, save the report, and inspect its sources and evidence gaps.
 
-This workflow makes no OpenAI API calls. It uses your existing chat access and is subject to that plan's limits. Meridian does not run or control ChatGPT automatically. Imported citations are preserved as supplied and explicitly marked as not fetched.
+The copy-and-import workflow makes no OpenAI API calls. It uses your existing chat access and is subject to that plan's limits. Imported citations are preserved as supplied and explicitly marked as not fetched.
 
 **Windows quick start:** run `./Start-Meridian.ps1` in PowerShell from the repository folder. It uses a modern Node installation or the bundled Codex runtime when available, prepares the local database, and starts the app. No API key is needed for the default workflow.
 
@@ -60,6 +70,9 @@ Unit tests also cover portable briefs, chapter mapping, import fallbacks, source
 ## Source map
 
 - `components/Workspace.tsx`: workspace, report reader, source library, valuation lab and creation flow
+- `components/ResearchChat.tsx`: in-app chat, account connection, streaming and reviewed chapter saves
+- `scripts/chat-plugin.mjs`: loopback-only ChatGPT OAuth and subscription inference adapter
+- `scripts/chat-core.mjs` / `scripts/chat-storage.mjs`: input validation, stream/citation handling and protected local state
 - `components/Markdown.tsx`: text-safe Markdown rendering
 - `app/meridian.css`: responsive visual design and print styles
 - `lib/research.ts`: asset-specific research mandates, prompts, citations and DCF
