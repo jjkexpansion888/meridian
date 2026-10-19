@@ -4,7 +4,11 @@ Meridian is an owner-private investment research workspace built with React 19, 
 
 ## Default no-API lifecycle
 
-New reports default to `researchMode: manual`. The app creates a detailed, asset-specific research packet for the user's existing Codex/ChatGPT chat. No model API call is made. Users copy or download the brief, perform the research in their chat, then import a Markdown report. Matching chapter headings map text into the existing outline; unmatched input is preserved intact in the committee-memo chapter. The import preview explains which chapters will be replaced. Source links are extracted safely and marked as imported, with no fabricated access date. The server rejects advance/resume actions for manual reports.
+New reports default to `researchMode: manual`, which blocks API-key billing. The local creation form uses the connected ChatGPT plan and web research to resolve a name/ticker/website into a sourced investment identity. Only ambiguous identities need a user choice. The chosen type selects the appropriate outline. Identity research is stored under a preallocated, validated UUID that becomes the report ID. Creating the D1 record itself makes no provider call.
+
+The default Start full diligence action then runs a sequential chapter queue through the existing local ChatGPT-plan stream endpoint. Each answer must finish, match exactly the requested chapter and exceed the minimum completeness floor before it is imported and persisted. The next chapter receives the evolving report; the final memo synthesizes preceding research. Already-completed chapters are preserved. Pause finishes the current chapter; abort, failure or leaving the report stops the queue. Completed history answers can be reused after a failed D1 save. Switching reader tabs keeps the chat mounted. No browser-close or unattended background execution is claimed. Plan limits cause a visible stop, never API-key fallback.
+
+Copy/download and manual import remain available for existing reports and newly identified briefs. The copy-and-import path makes no provider call. Matching chapter headings map text into the existing outline; unmatched input is preserved intact in the committee-memo chapter. The import preview explains which chapters will be replaced. Source links are extracted safely and marked as imported, with no fabricated access date. The server rejects advance/resume actions for manual reports.
 
 ## Optional paid API research lifecycle
 
@@ -26,6 +30,8 @@ Demo material is explicitly fictional. Only demo notes and watch preferences use
 ## Evidence integrity
 
 Provider citation offsets are converted into ordinary clickable links. URLs are limited to HTTP(S), deduplicated, and labeled cited or consulted. Rendering uses React text nodes and a small Markdown renderer; raw HTML is not interpreted. A source appearing in a report is not represented as independently verified. Missing citations and chapters below the length target are highlighted.
+
+Research prompts actively request relevant YouTube videos and public social evidence, with direct permalinks, author/channel, date, accessible material, bias and corroboration. Timestamps must be verified; inaccessible transcripts/posts become evidence gaps. This is web research, not a dedicated media transcription or social-platform API. Source filters classify exact platform domains and preserve the original links. Prompts cannot force access to unavailable content.
 
 Research prompts require dated financial tables, explicit units, reconciliation, original-source citations, opposing evidence and clear treatment of unavailable private data. They cannot guarantee compliance. There is no independent fact-checking service, licensed market-data feed, original expert-interview network, SEC/XBRL normalization pipeline, audited financial model, or full automated numerical verification in this release. The generic valuation lab is a separate user-input sensitivity model, not an automatically extracted valuation.
 

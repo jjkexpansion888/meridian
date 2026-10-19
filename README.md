@@ -8,7 +8,11 @@ An evidence-led investment diligence workspace for public equities, cryptocurren
 
 ### Research chat inside Meridian
 
-Open a report and choose **Research chat → Continue with ChatGPT**. Sign in to an eligible ChatGPT account and authorize Meridian to use your plan. Select an available model, keep **Web research** on for current evidence, then ask a question or select **Research the next chapter**. Answers stream into the conversation. Use **Save to report** to review the chapter mapping before replacing report text.
+Choose **New diligence**, enter a company name, ticker, cryptocurrency or website, and click **Start full diligence**. Meridian researches the identity, selects the public-equity, crypto or private-company template, and generates every chapter automatically. It asks you to choose an exact investment only when the name is genuinely ambiguous. Connect an eligible ChatGPT plan when prompted.
+
+For an existing report, choose **Research chat → Generate full report** (or **Continue full report**). Chapters research in sequence to preserve depth, save automatically, and culminate in a memo based on the preceding investigation. Existing completed chapters are preserved. **Pause after this chapter** finishes and saves the current chapter; **Stop response** interrupts immediately without importing partial text. Keep this report open; switching its reader tabs is supported, but closing the page or leaving the report stops the queue. Return and continue from the saved chapters. A finished answer can be recovered from local chat history if its report save failed. No automatic paid API fallback is used.
+
+You can still ask individual questions or request a chapter. Use **Save to report** for these individual answers to review the mapping before replacing report text. Uncheck **Generate every chapter automatically** when creating a brief if you want to research later.
 
 This uses the official [ChatGPT plan integration for local apps](https://developers.openai.com/siwc/token-sharing-open-source), with subscription limits and account eligibility. It does not use `OPENAI_API_KEY`, buy credits, or fall back to API billing. Manage the app's allowance and any credit permissions in [ChatGPT usage settings](https://chatgpt.com/settings/usage). Web research availability depends on the selected model and account policy. This connection does not access existing ChatGPT conversations.
 
@@ -16,8 +20,8 @@ The connection runs only in the local development launcher (`npm run dev` / `Sta
 
 ### Copy and import from an existing chat
 
-1. Create a research brief for a stock, cryptocurrency or private company.
-2. Keep **Use my Codex / ChatGPT chat** selected.
+1. Open an existing report, or create a brief with automatic generation unchecked.
+2. Choose **Copy research brief** or **Download brief**.
 3. Copy or download the detailed brief and use it in your existing Codex/ChatGPT chat.
 4. Ask for the long report as a Markdown file, preserving the supplied chapter headings and ordinary source links.
 5. Click **Import report** in Meridian. Review the chapter mapping, save the report, and inspect its sources and evidence gaps.
@@ -28,9 +32,10 @@ The copy-and-import workflow makes no OpenAI API calls. It uses your existing ch
 
 ## What it does
 
-- Organizes 15–16 chapter reports from your existing chat, with clickable source citations. An optional funded API mode can research chapters automatically.
+- Identifies the investment from its name, ticker or website and generates all 15–16 chapters from one action using your ChatGPT plan, with clickable citations. An optional funded API mode remains available for existing API-mode reports.
 - Targets 12,000–19,000 words for deep diligence, or 23,000–35,000 words for investment committee depth. Length is a target, not a guarantee.
 - Covers financial statements and earnings quality, business economics, competition, customers, management, valuation, permanent-loss risks, the opposing case, catalysts and evidence gaps.
+- Searches relevant YouTube interviews, demonstrations and technical talks, and public social posts/discussions. Requires author/date/permalink, verified timestamps when available, disclosure of accessible material and incentives, and corroboration of material claims. Inaccessible media becomes an evidence gap, never fabricated viewing or transcripts. YouTube and Social filters are available in the evidence library.
 - Adds token economics and security for crypto; cap tables, financing terms and commercial diligence for private companies.
 - Saves reports, notes and watchlist preferences privately in D1, scoped to the signed-in account.
 - Preserves research progress by chapter; supports pause, resume, retry and cancellation.
@@ -53,7 +58,7 @@ Open the localhost URL printed by the dev server. Click New diligence, then Sign
 
 For local live research, copy `.dev.vars.example` to `.dev.vars`, add your own `OPENAI_API_KEY`, and restart the dev server. Store hosted keys in server secrets. API keys, local databases and saved reports are excluded from Git and the source ZIP. Never place keys in browser code or commit a populated environment file.
 
-For the optional API workflow, select **Automatic API research**, create a brief, review it, then click **Start paid research**. API charges apply. Keep the tab open to advance between chapters. Closing it does not cancel a provider request already in progress; return to resume the queue. Pause lets the current request finish, while Cancel current asks the provider to stop it.
+For an existing optional API-mode report, review the brief, then click **Start paid research**. Programmatic creation can explicitly select `researchMode: "api"`; the standard creation form uses your ChatGPT plan. API charges apply. Keep the tab open to advance between chapters. Closing it does not cancel a provider request already in progress; return to resume the queue. Pause lets the current request finish, while Cancel current asks the provider to stop it.
 
 ## Verification
 
@@ -63,6 +68,7 @@ npm test
 npm run build
 # With the local server and database running:
 node tests/local-api.mjs
+node tests/local-full-report.mjs
 ```
 
 Unit tests also cover portable briefs, chapter mapping, import fallbacks, source provenance and quota errors. Local integration tests verify that no-API mode refuses paid calls. Unit tests cover asset-specific mandates, evidence handling, citation offsets, source deduplication, unsafe URLs and DCF arithmetic. Local API checks cover authentication, spoofed-identity rejection, origin enforcement, validation, persistence, notes, watchlist, missing-key failure, pause/resume and fixture deletion. They refuse non-loopback hosts and do not intentionally make paid provider calls.
@@ -70,7 +76,10 @@ Unit tests also cover portable briefs, chapter mapping, import fallbacks, source
 ## Source map
 
 - `components/Workspace.tsx`: workspace, report reader, source library, valuation lab and creation flow
-- `components/ResearchChat.tsx`: in-app chat, account connection, streaming and reviewed chapter saves
+- `components/ResearchChat.tsx`: in-app chat, full-report progress, pause/resume and reviewed individual saves
+- `components/NewResearch.tsx` / `lib/asset-identity.ts`: automatic identity resolution and sourced disambiguation
+- `lib/full-report.ts` / `lib/chat-client.ts`: sequential research, bounded context, validated saves and stream handling
+- `lib/evidence-policy.ts`: YouTube/social provenance standards and evidence categories
 - `scripts/chat-plugin.mjs`: loopback-only ChatGPT OAuth and subscription inference adapter
 - `scripts/chat-core.mjs` / `scripts/chat-storage.mjs`: input validation, stream/citation handling and protected local state
 - `components/Markdown.tsx`: text-safe Markdown rendering
