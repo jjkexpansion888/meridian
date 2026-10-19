@@ -1,0 +1,13 @@
+import ts from 'typescript';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
+import path from 'node:path';
+import {spawnSync} from 'node:child_process';
+for(const file of ['lib/types.ts','lib/research.ts','lib/portable-research.ts','lib/demo.ts','tests/research.test.ts']){
+  const output=path.join('.sites-runtime/tests',file.replace(/\.ts$/,'.js'));
+  await mkdir(path.dirname(output),{recursive:true});
+  const source=await readFile(file,'utf8');
+  const compiled=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
+  await writeFile(output,compiled.replace(/from (["'])(\.\.?\/[^"']+)\1/g,(_,quote,specifier)=>`from ${quote}${specifier}.js${quote}`));
+}
+const result=spawnSync(process.execPath,['--test','.sites-runtime/tests/tests/research.test.js'],{stdio:'inherit'});
+process.exitCode=result.status??1;
