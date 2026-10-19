@@ -2,7 +2,7 @@
 
 An evidence-led investment diligence workspace for public equities, cryptocurrencies and private companies.
 
-**Delivery:** local Git repository. Private hosting was registered, but publication was blocked by the execution approval policy. The registered URL is not a verified deployment.
+**Status:** source code for a locally runnable app. Publishing this repository does not deploy a hosted app or expose your saved research.
 
 ## Default workflow: no API credits
 
@@ -41,7 +41,7 @@ npm run dev
 
 Open the localhost URL printed by the dev server. Click New diligence, then Sign in to create research. The portable starter provides loopback-only mock sign-in for local development. It is not included in production.
 
-For local live research, copy `.dev.vars.example` to `.dev.vars`, add your own `OPENAI_API_KEY`, and restart the dev server. The hosted key is stored in Sites secrets. This checkout also has an ignored local `.dev.vars` for development; the key is excluded from Git and the source ZIP. Never place keys in browser code or commit a populated environment file.
+For local live research, copy `.dev.vars.example` to `.dev.vars`, add your own `OPENAI_API_KEY`, and restart the dev server. Store hosted keys in server secrets. API keys, local databases and saved reports are excluded from Git and the source ZIP. Never place keys in browser code or commit a populated environment file.
 
 For the optional API workflow, select **Automatic API research**, create a brief, review it, then click **Start paid research**. API charges apply. Keep the tab open to advance between chapters. Closing it does not cancel a provider request already in progress; return to resume the queue. Pause lets the current request finish, while Cancel current asks the provider to stop it.
 
@@ -70,7 +70,7 @@ Unit tests also cover portable briefs, chapter mapping, import fallbacks, source
 
 ## Deployment
 
-This repository uses Vinext and the Sites Cloudflare integration. Keep the `sites()` Vite plugin and `.openai/hosting.json` intact. The hosting manifest identifies the private app and declares the D1 binding. Sites applies schema migrations during publication. Runtime values `OPENAI_API_KEY` and `OPENAI_MODEL` belong in the deployment's server secrets.
+This repository uses Vinext and the Sites Cloudflare integration. Keep the `sites()` Vite plugin and the D1 binding in `.openai/hosting.json`. The manifest refers to the original Sites project; a fork needs its own deployment project and database. Sites applies schema migrations during publication. Runtime values `OPENAI_API_KEY` and `OPENAI_MODEL` belong in the deployment's server secrets. The source repository is separate from the visibility and authorization of a deployed workspace.
 
 The configured model is `gpt-5.5`, following the official web-search integration documentation available during implementation. It can be changed server-side to a compatible Responses API model with background mode and web-search support. The access test in Settings verifies model access without generating a report.
 
@@ -82,4 +82,4 @@ Meridian implements a professional diligence framework; it does not promise rese
 
 This release uses public-web research rather than a licensed terminal feed. It does not perform original expert interviews, autonomous code audits or automated accounting certification. The valuation lab is illustrative until you enter verified inputs. Reports can contain errors and should be reviewed before investment use. The app is independent of Pershing Square and other investment managers.
 
-The repository is ready to develop. It has not been pushed to a remote or created in a GitHub account.
+The default workflow needs no API key. Automatic API research requires a funded provider account.
