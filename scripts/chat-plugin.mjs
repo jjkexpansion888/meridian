@@ -2,7 +2,7 @@ import {createServer} from 'node:http';
 import {join} from 'node:path';
 import {createRemoteJWKSet,jwtVerify} from 'jose';
 import {localStore} from './chat-storage.mjs';
-import {ISSUER,RESOURCE,accountKey,allowLocalRequest,makeAuthorization,validateCallback,planEnabled,newMessage,answerText,streamEvents,providerError,validateTurn,responseRequest} from './chat-core.mjs';
+import {ISSUER,RESOURCE,accountKey,allowLocalRequest,makeAuthorization,validateCallback,planEnabled,newMessage,answerText,streamEvents,providerError,signInError,validateTurn,responseRequest} from './chat-core.mjs';
 
 const json=(res,status,value)=>{res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(value));};
 async function bodyJson(req) {
@@ -13,7 +13,7 @@ async function bodyJson(req) {
 async function fetchJson(url,options={}) {
   const res=await fetch(url,{...options,signal:options.signal || AbortSignal.timeout(25000)});
   const data=await res.json().catch(()=>({}));
-  if(!res.ok) {const error=new Error(providerError(data.error?.code || data.error,res.status));error.status=res.status;throw error;}
+  if(!res.ok) {const error=new Error(providerError(data.error?.code || data.error,res.status));error.status=res.status;error.providerCode=data.error?.code || data.error;throw error;}
   return data;
 }
 
@@ -46,8 +46,11 @@ export function meridianChat({storage:providedStorage}={}) {
   async function signIn(profile,origin) {
     stopLogin();authError='';
     const storage=await store();
+    // Fail before opening the browser if this process cannot reach OpenAI.
+    try {await jwks.reload();} catch(error) {authError=signInError(error,'identity');throw new Error(authError);}
     const callbackServer=createServer(async(req,res)=>{
       let transaction=pending?.transaction;
+      let stage='callback';
       const safeHtml=(ok,message)=>{res.writeHead(ok?200:400,{'Content-Type':'text/html;charset=utf-8','Cache-Control':'no-store','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'",'Referrer-Policy':'no-referrer'});res.end(`<!doctype html><title>Meridian · ChatGPT connection</title><body style="font:18px system-ui;background:#f6f8f1;color:#29432b;padding:70px;max-width:650px"><h1>${ok?'You’re connected.':'Connection needs attention.'}</h1><p>${message}</p><a href="${origin}" style="color:#29432b">Return to Meridian</a></body>`);};
       try {
         if(req.method!=='GET'||req.headers.host!==new URL(transaction?.redirectUri || 'http://127.0.0.1').host) {res.writeHead(404);res.end();return;}
@@ -56,20 +59,24 @@ export function meridianChat({storage:providedStorage}={}) {
         const {clientId,code}=validateCallback(url,transaction);
         // Consume before exchange. No replay or racing callback can reuse the code.
         stopLogin();
+        stage='exchange';
         const tokens=await fetchJson(`${ISSUER}/api/accounts/oauth/token`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'authorization_code',client_id:clientId,code,code_verifier:transaction.verifier,redirect_uri:transaction.redirectUri,resource:RESOURCE})});
+        stage='identity';
         const {payload}=await jwtVerify(tokens.id_token,jwks,{issuer:ISSUER,audience:clientId,requiredClaims:['sub','exp','iat'],clockTolerance:5});
         if(payload.nonce!==transaction.nonce || typeof payload.sub!=='string'||!payload.sub) throw new Error('ChatGPT identity could not be verified.');
         if(profile && profile.subject!==payload.sub) throw new Error('This sign-in belongs to another account. Add it as a new connection.');
+        stage='response';
         if(typeof tokens.access_token!=='string'||!Number.isFinite(tokens.expires_in)) throw new Error('ChatGPT returned an incomplete connection.');
         const id=accountKey(payload.sub,clientId);
         const saved={id,clientId,subject:payload.sub,email:typeof payload.email==='string'?payload.email:'ChatGPT account'};
         storage.credentials[id]={...saved,accessToken:tokens.access_token,refreshToken:tokens.refresh_token,idToken:tokens.id_token,expiresAt:Date.now()+tokens.expires_in*1000,scopes:typeof tokens.scope==='string'?tokens.scope.split(' '):[]};
         storage.settings.profiles=storage.settings.profiles.filter(p=>p.id!==id).concat(saved);storage.settings.active=id;
+        stage='storage';
         try {await storage.save();} catch(e) {delete storage.credentials[id];storage.settings.active=null;throw e;}
         modelCache=null;
         safeHtml(true,planEnabled(storage.credentials[id])?'Your ChatGPT plan is connected to Meridian. Return to the Research chat to send your first message.':'You are signed in, but ChatGPT plan usage was not granted. Review Meridian access in ChatGPT settings before sending a message.');
-      } catch {
-        stopLogin();authError='Sign-in could not be completed. Please try again from Meridian. If access was declined, review your ChatGPT plan settings.';
+      } catch(error) {
+        stopLogin();authError=signInError(error,stage);
         // Do not render provider errors, codes, or tokens in the callback page.
         safeHtml(false,authError);
       }

@@ -84,6 +84,24 @@ export function providerError(code, status) {
   return 'ChatGPT could not complete this response. Try another available model or turn off web research. Your conversation has been preserved.';
 }
 
+// Only fixed, actionable messages leave the server. Never echo OAuth payloads,
+// token claims, callback URLs, or an arbitrary provider exception to the UI.
+export function signInError(error, stage='callback') {
+  const code=error?.cause?.code || error?.code;
+  if(['EACCES','EPERM'].includes(code)) return 'Meridian cannot reach OpenAI because this process has no network permission. Restart Meridian with network access, then reconnect.';
+  if(['ENOTFOUND','EAI_AGAIN','ECONNREFUSED','ECONNRESET','ETIMEDOUT','UND_ERR_CONNECT_TIMEOUT'].includes(code) || ['TimeoutError','AbortError'].includes(error?.name)) return 'Meridian could not reach OpenAI to finish sign-in. Check the connection and try again.';
+  if(stage==='exchange') {
+    if(error?.providerCode==='invalid_grant') return 'This sign-in code expired or was already used. Start a fresh connection from Meridian.';
+    if(error?.status===403) return 'OpenAI declined the sign-in exchange. Review Meridian access in ChatGPT settings, then reconnect.';
+    if(error?.status>=500) return 'OpenAI is temporarily unable to finish sign-in. Try connecting again shortly.';
+    return 'OpenAI could not exchange the sign-in code. Start a fresh connection from Meridian.';
+  }
+  if(stage==='identity') return 'Meridian could not verify the ChatGPT identity response. Check the computer clock and reconnect. No connection was saved.';
+  if(stage==='storage') return 'Sign-in was verified, but Meridian could not save the local connection. Check that its data folder is writable and reconnect.';
+  if(stage==='response') return 'OpenAI returned an incomplete sign-in response. Reconnect from Meridian.';
+  return 'The sign-in callback was expired, declined, or could not be verified. Start a fresh connection from Meridian.';
+}
+
 export function validateTurn(value) {
   if(!value || !/^[a-zA-Z0-9_-]{1,100}$/.test(value.reportId || '')) throw new Error('Invalid report identifier.');
   if(typeof value.text!=='string' || !value.text.trim() || value.text.length>16000) throw new Error('Enter a message of up to 16,000 characters.');

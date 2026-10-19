@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {mkdtemp,readFile,rm} from 'node:fs/promises';
 import {join,resolve,sep} from 'node:path';
 import {tmpdir} from 'node:os';
-import {allowLocalRequest,makeAuthorization,validateCallback,planEnabled,answerText,streamEvents,validateTurn,responseRequest,providerError} from '../scripts/chat-core.mjs';
+import {allowLocalRequest,makeAuthorization,validateCallback,planEnabled,answerText,streamEvents,validateTurn,responseRequest,providerError,signInError} from '../scripts/chat-core.mjs';
 import {localStore} from '../scripts/chat-storage.mjs';
 
 const local={method:'POST',socket:{remoteAddress:'127.0.0.1'},headers:{host:'127.0.0.1:5173',origin:'http://127.0.0.1:5173','x-meridian-chat':'1'}};
@@ -39,6 +39,15 @@ test('OAuth rejects wrong state, expired transaction, denied consent, missing or
 test('identity alone does not authorize plan usage',()=>{
  assert.equal(planEnabled({accessToken:'token',scopes:['openid']}),false);
  assert.equal(planEnabled({accessToken:'token',scopes:['chatgpt.tokens.use.direct','resource.invoke']}),true);
+});
+
+test('sign-in errors identify recovery steps without leaking provider payloads',()=>{
+ const secret='SYNTHETIC_PRIVATE_TOKEN';
+ for(const stage of ['callback','exchange','identity','response','storage']) assert.ok(!signInError({message:secret,providerCode:secret},stage).includes(secret));
+ assert.match(signInError({cause:{code:'EACCES'}},'exchange'),/network permission/);
+ assert.match(signInError({providerCode:'invalid_grant'},'exchange'),/expired or was already used/);
+ assert.match(signInError({status:503},'exchange'),/temporarily/);
+ assert.match(signInError({name:'TimeoutError'},'identity'),/could not reach/);
 });
 test('provider request uses subscription-compatible streaming and does not include API keys',()=>{
  const body=responseRequest({model:'test-model',context:'SUI brief',messages:[{role:'user',text:'Question',status:'completed'},{role:'assistant',text:'unfinished',status:'interrupted'}],webSearch:true});

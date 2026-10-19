@@ -22,6 +22,12 @@ Saving opens a review dialog showing matched chapter headings. Matching chapters
 
 ## Validation
 
-`npm test` includes local-origin checks, OAuth transaction checks, scope gating, request construction, fragmented stream parsing, citation safety, request limits, credential protection/session-only fallback and account-separated storage. `npm run typecheck` and `npm run build` check the browser and production compilation. Live OAuth consent and a completed model response must be verified separately with an eligible user's account. Tests never intentionally consume paid API credits.
+`npm test` includes local-origin checks, OAuth transaction checks, a signed-token login and PKCE exchange, rejected nonce validation, network denial, scope gating, request construction, fragmented stream parsing, citation safety, request limits, credential protection/session-only fallback and account-separated storage. `npm run typecheck` and `npm run build` check the browser and production compilation. Live OAuth consent and a completed model response must be verified separately with an eligible user's account. Tests never intentionally consume paid API credits.
+
+## Sign-in troubleshooting
+
+Meridian checks access to OpenAI's signing keys before opening sign-in. A process started without network permission can display the local app but cannot finish OAuth. Grant the runtime network access and launch a fresh server before reconnecting. Browser sign-in alone does not grant network access to the server process.
+
+If a callback fails, Meridian reports a fixed recovery message for network failures, expired codes, identity verification or local storage. Provider payloads, tokens and callback URLs are never included in these diagnostics. Expired or consumed authorization codes require a fresh sign-in; do not reload an old callback page. A session-only connection must be reauthorized after restarting the server.
 
 Official references: [registration](https://developers.openai.com/siwc/token-sharing-open-source/sign-in), [sessions](https://developers.openai.com/siwc/token-sharing-open-source/profiles-and-sessions), [inference](https://developers.openai.com/siwc/token-sharing-open-source/models-and-inference), [preview limits](https://developers.openai.com/siwc/token-sharing-open-source/preview-limitations).
