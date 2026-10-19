@@ -83,5 +83,3 @@ Meridian implements a professional diligence framework; it does not promise rese
 This release uses public-web research rather than a licensed terminal feed. It does not perform original expert interviews, autonomous code audits or automated accounting certification. The valuation lab is illustrative until you enter verified inputs. Reports can contain errors and should be reviewed before investment use. The app is independent of Pershing Square and other investment managers.
 
 The repository is ready to develop. It has not been pushed to a remote or created in a GitHub account.
-
-

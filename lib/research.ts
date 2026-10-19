@@ -56,4 +56,3 @@ export function dcf({revenue,growth,margin,discount,terminal,debt,shares,years=5
   const terminalPv=fcf*(1+terminal)/(discount-terminal)/(1+discount)**years;const enterprise=pv+terminalPv;
   return {enterprise,equity:enterprise-debt,perShare:(enterprise-debt)/shares,terminalShare:enterprise?terminalPv/enterprise:0};
 }
-

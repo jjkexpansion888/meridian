@@ -12,4 +12,3 @@ export async function POST(request:Request){try{
   const now=new Date().toISOString();const report:Report={id:crypto.randomUUID(),name:input.name.trim(),symbol:input.symbol?.trim()||"",type:input.type,depth:input.depth,focus:input.focus||"",context:input.context||"",asOf:input.asOf,status:"draft",starred:false,notes:"",chapters:createChapters(input.type),createdAt:now,updatedAt:now,model:input.researchMode==="api"?(env.OPENAI_MODEL||"gpt-5.5"):"Imported research",researchMode:input.researchMode==="api"?"api":"manual"};
   await env.DB!.prepare("INSERT INTO reports (id, owner_id, data, updated_at) VALUES (?, ?, ?, ?)").bind(report.id,owner,JSON.stringify(report),now).run();return json(report,201);
 }catch(e){return handleError(e);}}
-

@@ -59,4 +59,3 @@ export async function advance(id:string,owner:string){
   }
 }
 export function handleError(error:unknown){return json({error:error instanceof HttpError?error.message:"Something went wrong. Your saved research is safe; try again."},error instanceof HttpError?error.status:500);}
-

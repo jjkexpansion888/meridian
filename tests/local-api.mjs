@@ -31,5 +31,3 @@ try{
  console.log('PASS: no-API mode blocks paid calls and imports chapter text plus source links.');
  console.log('PASS: authentication, origin enforcement, input validation, persistence, notes, watchlist, missing-key failure, pause/resume and spoofed-identity rejection.');
 }finally{const removed=await request(`/api/reports/${id}`,'DELETE');assert.equal(removed.status,200);assert.equal((await request(`/api/reports/${id}`)).status,404);console.log('PASS: fixture deletion.');}
-
-
