@@ -32,7 +32,9 @@ The connection runs only in the local development launcher (`npm run dev` / `Sta
 
 The copy-and-import workflow makes no OpenAI API calls. It uses your existing chat access and is subject to that plan's limits. Imported citations are preserved as supplied and explicitly marked as not fetched.
 
-**Windows quick start:** run `./Start-Meridian.ps1` in PowerShell from the repository folder. It uses a modern Node installation or the bundled Codex runtime when available, prepares the local database, and starts the app. No API key is needed for the default workflow.
+**Windows quick start:** keep the repository directly in `Documents\Meridian`, then double-click `Start-Meridian.cmd` or run `./Start-Meridian.ps1` in PowerShell. The launcher resolves every project path from its own folder, so no Codex workspace directory is required. It uses a modern Node installation or an available bundled runtime, prepares the local database, and starts the app. No API key is needed for the default workflow.
+
+The project folder contains the application source, launchers, and Git repository. Local reports/database state live in `.wrangler`, the ChatGPT connection and transcripts in `.meridian-local`, saved downloads in `exports`, and migration backups in `.local`. These private/generated directories are excluded from Git. When relocating an already-running Windows session, compatibility links preserve its connection and database; the launcher completes the locked database move after the previous server closes. Reconnecting ChatGPT may be necessary after any server restart when credentials are session-only.
 
 ## What it does
 

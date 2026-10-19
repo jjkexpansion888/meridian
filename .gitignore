@@ -60,3 +60,5 @@ next-env.d.ts
 
 # Local ChatGPT connection and research conversations (never publish).
 /.meridian-local/
+/.local/
+/exports/

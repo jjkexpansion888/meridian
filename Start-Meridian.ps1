@@ -1,5 +1,16 @@
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
+$relocation = & (Join-Path $PSScriptRoot 'scripts\complete-local-move.ps1')
+if ($relocation.RunningUrl) {
+  Write-Host ('Meridian is already running at ' + $relocation.RunningUrl)
+  Write-Host ('Your project folder is ' + $PSScriptRoot)
+  Write-Host 'The active connection is preserved. Locked runtime files will finish moving after the old server closes.'
+  Start-Process $relocation.RunningUrl
+  return
+}
+if ($relocation.Pending) {
+  Write-Host 'A previous server still holds the database open. The compatibility link preserves the current data until all Meridian servers are closed.'
+}
 $nodeCommand = Get-Command node.exe -ErrorAction SilentlyContinue
 $nodeBinary = if ($nodeCommand) { $nodeCommand.Source } else { $null }
 if ($nodeBinary) { $majorVersion = [int]((& $nodeBinary --version).TrimStart('v').Split('.')[0]) } else { $majorVersion = 0 }
@@ -23,5 +34,6 @@ if (-not (Test-Path -LiteralPath '.wrangler\meridian-initialized')) {
   New-Item -ItemType Directory -Path '.wrangler' -Force | Out-Null
   Set-Content -LiteralPath '.wrangler\meridian-initialized' -Value '1'
 }
-Write-Host 'Meridian is starting at http://127.0.0.1:5173/ . No API key is needed for the default research-and-import workflow.'
+Write-Host ('Starting Meridian from ' + $PSScriptRoot)
+Write-Host 'Open the localhost URL printed below. The default research workflow uses your connected ChatGPT plan without an API key.'
 & $nodeBinary scripts/run-framework.mjs dev --hostname 127.0.0.1
